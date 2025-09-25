@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XTTS API Test Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .audio-player {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .status.loading {
+            background: #cce5ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+            display: block;
+        }
+
+        .speakers-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .speaker-tag {
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ XTTS API Test Page</h1>
+
+        <div class="info-box">
+            <p><strong>Server:</strong> <span id="server-url">http://localhost:8020</span></p>
+            <p><strong>Status:</strong> <span id="server-status">Checking...</span></p>
+        </div>
+
+        <div class="form-group">
+            <label for="text">Text to Speech:</label>
+            <textarea id="text" placeholder="Enter the text you want to convert to speech...">Hello! This is a test of the XTTS text-to-speech system. It can generate natural sounding speech in multiple languages.</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="language">Language:</label>
+            <select id="language">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="it">Italian</option>
+                <option value="pt">Portuguese</option>
+                <option value="pl">Polish</option>
+                <option value="tr">Turkish</option>
+                <option value="ru">Russian</option>
+                <option value="nl">Dutch</option>
+                <option value="cs">Czech</option>
+                <option value="ar">Arabic</option>
+                <option value="zh-cn">Chinese</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="hi">Hindi</option>
+                <option value="hu">Hungarian</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="speaker">Speaker (voice sample):</label>
+            <select id="speaker">
+                <option value="">Loading speakers...</option>
+            </select>
+            <div class="speakers-list" id="speakers-info"></div>
+        </div>
+
+        <div class="form-group">
+            <label for="custom-speaker">Or enter custom speaker path:</label>
+            <input type="text" id="custom-speaker" placeholder="e.g., speakers/my_voice.wav">
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="generateSpeech()">🔊 Generate Speech</button>
+            <button class="btn-secondary" onclick="loadSpeakers()">🔄 Refresh Speakers</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div class="audio-player" id="audio-container" style="display: none;">
+            <h3>Generated Audio:</h3>
+            <audio id="audio-player" controls></audio>
+            <div style="margin-top: 10px;">
+                <a id="download-link" download="generated_speech.wav" style="color: #667eea; text-decoration: none; font-weight: 500;">
+                    📥 Download Audio
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8020';
+
+        // Check server status on load
+        window.onload = function() {
+            checkServerStatus();
+            loadSpeakers();
+        };
+
+        async function checkServerStatus() {
+            const statusElement = document.getElementById('server-status');
+            try {
+                const response = await fetch(`${API_BASE}/languages`);
+                if (response.ok) {
+                    statusElement.textContent = '✅ Connected';
+                    statusElement.style.color = '#28a745';
+                } else {
+                    statusElement.textContent = '❌ Error';
+                    statusElement.style.color = '#dc3545';
+                }
+            } catch (error) {
+                statusElement.textContent = '❌ Not reachable';
+                statusElement.style.color = '#dc3545';
+            }
+        }
+
+        async function loadSpeakers() {
+            const speakerSelect = document.getElementById('speaker');
+            const speakersInfo = document.getElementById('speakers-info');
+
+            try {
+                const response = await fetch(`${API_BASE}/speakers_list`);
+                if (!response.ok) throw new Error('Failed to load speakers');
+
+                const speakers = await response.json();
+
+                speakerSelect.innerHTML = '<option value="">Select a speaker...</option>';
+                speakersInfo.innerHTML = '';
+
+                if (speakers.length === 0) {
+                    speakerSelect.innerHTML += '<option value="example/female.wav">Example: Female Voice</option>';
+                    speakerSelect.innerHTML += '<option value="example/male.wav">Example: Male Voice</option>';
+                    speakerSelect.innerHTML += '<option value="example/calm_female.wav">Example: Calm Female</option>';
+                    speakersInfo.innerHTML = '<div class="speaker-tag">No custom speakers found. Using examples.</div>';
+                } else {
+                    speakers.forEach(speaker => {
+                        const option = document.createElement('option');
+                        option.value = speaker.speaker_name;
+                        option.textContent = speaker.speaker_name;
+                        speakerSelect.appendChild(option);
+
+                        const tag = document.createElement('div');
+                        tag.className = 'speaker-tag';
+                        tag.textContent = speaker.speaker_name;
+                        speakersInfo.appendChild(tag);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading speakers:', error);
+                speakerSelect.innerHTML = '<option value="">Error loading speakers</option>';
+                speakerSelect.innerHTML += '<option value="example/female.wav">Example: Female Voice</option>';
+                speakerSelect.innerHTML += '<option value="example/male.wav">Example: Male Voice</option>';
+                speakerSelect.innerHTML += '<option value="example/calm_female.wav">Example: Calm Female</option>';
+            }
+        }
+
+        async function generateSpeech() {
+            const text = document.getElementById('text').value;
+            const language = document.getElementById('language').value;
+            const speaker = document.getElementById('custom-speaker').value ||
+                           document.getElementById('speaker').value;
+            const statusDiv = document.getElementById('status');
+            const audioContainer = document.getElementById('audio-container');
+            const audioPlayer = document.getElementById('audio-player');
+            const downloadLink = document.getElementById('download-link');
+
+            if (!text) {
+                showStatus('Please enter some text to convert to speech.', 'error');
+                return;
+            }
+
+            if (!speaker) {
+                showStatus('Please select a speaker or enter a speaker path.', 'error');
+                return;
+            }
+
+            showStatus('Generating speech... This may take a moment.', 'loading');
+
+            try {
+                const response = await fetch(`${API_BASE}/tts_to_audio/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        speaker_wav: speaker,
+                        language: language
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to generate speech');
+                }
+
+                const blob = await response.blob();
+                const audioUrl = URL.createObjectURL(blob);
+
+                audioPlayer.src = audioUrl;
+                downloadLink.href = audioUrl;
+                audioContainer.style.display = 'block';
+
+                showStatus('Speech generated successfully!', 'success');
+
+                // Auto-play the generated audio
+                audioPlayer.play().catch(e => console.log('Auto-play prevented:', e));
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                console.error('Error generating speech:', error);
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    statusDiv.className = 'status';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
