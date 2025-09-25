@@ -78,11 +78,8 @@ COPY example/ ./example/
 RUN mkdir -p /app/speakers /app/output /app/xtts_models && \
     chmod -R 777 /app/speakers /app/output /app/xtts_models
 
-# Pre-download the default model to speed up first run
-RUN python -c "from TTS.api import TTS; import torch; \
-    if torch.cuda.is_available(): \
-        print('CUDA available, downloading model...'); \
-        tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2').to('cuda')"
+# Pre-download the default model to speed up first run (optional)
+# RUN python -c "import torch; from TTS.api import TTS; print('Downloading XTTS model...'); tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2'); print('Model downloaded successfully!')"
 
 # Environment variables for GPU support
 ENV CUDA_VISIBLE_DEVICES=0
