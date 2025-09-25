@@ -6,7 +6,7 @@ services:
     container_name: xtts-api-server
     build:
       context: .
-      dockerfile: Dockerfile.production
+      dockerfile: ${DOCKERFILE:-Dockerfile.production}
     ports:
       - "8020:8020"
     volumes:

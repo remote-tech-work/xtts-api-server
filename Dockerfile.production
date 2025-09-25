@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     build-essential \
     portaudio19-dev \
+    libaio-dev \
+    ninja-build \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Python 3.11 as default
@@ -36,8 +38,12 @@ RUN pip install torch==2.1.1+cu118 torchaudio==2.1.1+cu118 --index-url https://d
 # Install other dependencies
 RUN pip install -r /tmp/requirements.txt
 
-# Install DeepSpeed for faster inference
-RUN pip install deepspeed
+# Install DeepSpeed for faster inference (with fallback)
+RUN pip install packaging ninja && \
+    (pip install deepspeed --no-cache-dir || \
+     (echo "DeepSpeed wheel installation failed, trying from source..." && \
+      pip install git+https://github.com/microsoft/DeepSpeed.git --no-cache-dir) || \
+     echo "DeepSpeed installation failed completely - continuing without it")
 
 # Stage 2: Runtime
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
