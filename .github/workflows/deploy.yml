@@ -75,7 +75,7 @@ jobs:
         INSTANCE_TYPE="g4dn.xlarge"
         AMI_ID="${{ secrets.AMI_ID || 'ami-0143ff78595ef49f5' }}"
         KEY_NAME="${{ secrets.KEY_NAME || 'finetuning' }}"
-        SECURITY_GROUP="sg-xtts-api-${{ github.ref_name }}"
+        SECURITY_GROUP="xtts-api-${{ github.ref_name }}"
         MAX_PRICE="0.30"
         ELASTIC_IP_ALLOCATION_ID="eipalloc-053fa187bd3ca7c89"
         REGION="${{ env.AWS_REGION }}"

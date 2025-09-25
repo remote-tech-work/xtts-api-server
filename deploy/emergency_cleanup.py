@@ -34,7 +34,7 @@ class XTTSEmergencyCleanup:
 
         # XTTS-specific identifiers
         self.project_tags = ['xtts-api', 'XTTS-API-Server']
-        self.resource_prefixes = ['xtts-api', 'XTTS-API', 'sg-xtts-api']
+        self.resource_prefixes = ['xtts-api', 'XTTS-API']
         self.instance_names = ['XTTS-API-Server']
         self.elastic_ip_allocation_id = "eipalloc-053fa187bd3ca7c89"
 

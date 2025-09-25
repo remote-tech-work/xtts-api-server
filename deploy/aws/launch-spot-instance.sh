@@ -9,7 +9,7 @@ set -e
 INSTANCE_TYPE="g4dn.xlarge"
 AMI_ID="ami-0143ff78595ef49f5"  # Ubuntu 22.04 LTS with NVIDIA drivers (update for your region)
 KEY_NAME="finetuning"  # Replace with your key pair name
-SECURITY_GROUP="sg-xtts-api"  # Will be created if doesn't exist
+SECURITY_GROUP="xtts-api"  # Will be created if doesn't exist
 SUBNET_ID=""  # Optional: specify subnet ID
 MAX_PRICE="0.30"  # Maximum spot price per hour
 ELASTIC_IP_ALLOCATION_ID="eipalloc-053fa187bd3ca7c89"
