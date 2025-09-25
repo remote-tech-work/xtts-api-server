@@ -19,12 +19,26 @@ open test_tts.html
 ```
 
 ### Docker Build & Test
+
+#### Local Build (if you have enough disk space)
 ```bash
 # Build with fallback (handles DeepSpeed failures)
 ./build-docker.sh
 
 # Test built image locally
 docker run -p 8020:8020 -e DEVICE=cpu xtts-api-server:latest
+```
+
+#### AWS Build (recommended for disk space issues)
+```bash
+# First, launch AWS instance
+./deploy/aws/launch-spot-instance.sh
+
+# Build on AWS with 200GB storage
+./deploy/build-on-aws.sh -k ~/.ssh/finetuning.pem
+
+# Deploy the built image
+./deploy/deploy.sh -k ~/.ssh/finetuning.pem
 ```
 
 ### AWS Deployment

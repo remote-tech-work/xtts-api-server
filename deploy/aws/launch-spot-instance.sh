@@ -158,9 +158,11 @@ REQUEST_ID=$(aws ec2 request-spot-instances \
             {
                 \"DeviceName\": \"/dev/sda1\",
                 \"Ebs\": {
-                    \"VolumeSize\": 100,
+                    \"VolumeSize\": 200,
                     \"VolumeType\": \"gp3\",
-                    \"DeleteOnTermination\": true
+                    \"DeleteOnTermination\": true,
+                    \"Iops\": 3000,
+                    \"Throughput\": 125
                 }
             }
         ]

@@ -10,11 +10,39 @@ echo "🚀 Starting XTTS API Server setup..."
 apt-get update
 apt-get upgrade -y
 
+# Extend root partition to use full 200GB disk
+echo "💾 Extending root partition to use full disk..."
+growpart /dev/xvda 1 || growpart /dev/nvme0n1 1 || echo "Partition already extended"
+resize2fs /dev/xvda1 || resize2fs /dev/nvme0n1p1 || echo "Filesystem already extended"
+
+# Show available disk space
+df -h
+
 # Install Docker
 echo "🐳 Installing Docker..."
 curl -fsSL https://get.docker.com -o get-docker.sh
 sh get-docker.sh
 usermod -aG docker ubuntu
+
+# Configure Docker for better disk usage
+echo "⚙️ Configuring Docker daemon..."
+mkdir -p /etc/docker
+cat > /etc/docker/daemon.json <<'DOCKERCONF'
+{
+  "storage-driver": "overlay2",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "data-root": "/home/docker-data"
+}
+DOCKERCONF
+
+# Create Docker data directory on larger disk
+mkdir -p /home/docker-data
+chown root:root /home/docker-data
+chmod 755 /home/docker-data
 
 # Install NVIDIA Container Toolkit
 echo "🎮 Installing NVIDIA Container Toolkit..."
@@ -37,10 +65,23 @@ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip
 unzip awscliv2.zip
 ./aws/install
 
-# Create app directory structure
+# Create app directory structure with dedicated space for large files
 echo "📁 Setting up application directories..."
-mkdir -p /home/ubuntu/xtts-api-server/{speakers,output,models}
+mkdir -p /home/ubuntu/xtts-api-server
+mkdir -p /home/xtts-data/{speakers,output,models,cache}
 cd /home/ubuntu/xtts-api-server
+
+# Create symlinks to the dedicated data directory
+ln -sf /home/xtts-data/speakers ./speakers
+ln -sf /home/xtts-data/output ./output
+ln -sf /home/xtts-data/models ./models
+
+# Set proper ownership
+chown -R ubuntu:ubuntu /home/ubuntu/xtts-api-server
+chown -R ubuntu:ubuntu /home/xtts-data
+
+echo "📊 Available disk space:"
+df -h
 
 # Create initial docker-compose file
 cat > docker-compose.production.yml <<'EOF'
