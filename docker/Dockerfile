@@ -14,28 +14,30 @@ RUN apt-get update && \
 # Upgrade pip and install build tools
 RUN python3 -m pip install --upgrade pip setuptools wheel
 
-# Install PyTorch with specific versions for stability
+# Install system dependencies for scipy
+RUN apt-get update && apt-get install -y gfortran libopenblas-dev liblapack-dev && rm -rf /var/lib/apt/lists/*
+
+# Install PyTorch first with CUDA support
 RUN pip install torch==2.1.1 torchaudio==2.1.1 --index-url https://download.pytorch.org/whl/cu121
 
-# Install dependencies in correct order with specific versions
-# First install TTS without dependencies to avoid conflicts
-RUN pip install --no-deps TTS==0.22.0
+# Install numpy and scipy
+RUN pip install numpy==1.24.3 scipy==1.11.4
 
-# Install coqpit with specific working version BEFORE other packages
+# Install coqpit with specific working version
 RUN pip install "coqpit>=0.0.16,<0.0.18"
 
-# Install other TTS dependencies
-RUN pip install numpy scipy torch==2.1.1 torchaudio==2.1.1 --index-url https://download.pytorch.org/whl/cu121
+# Install TTS without dependencies first
+RUN pip install --no-deps TTS==0.22.0
 
 # Install deepspeed
 RUN pip install deepspeed==0.14.0
 
-# Install remaining TTS dependencies
-RUN pip install gruut pysbd inflect librosa transformers>=4.33.0 encodec num2words
+# Install remaining dependencies
+RUN pip install gruut pysbd inflect librosa "transformers>=4.33.0" encodec num2words
 
-# Finally install xtts-api-server
+# Install xtts-api-server and its dependencies
 RUN pip install --no-deps xtts-api-server==0.9.0
-RUN pip install pydantic loguru fastapi uvicorn[standard] python-multipart streaming-stt-nemo
+RUN pip install pydantic loguru fastapi "uvicorn[standard]" python-multipart
 
 # Create necessary directories
 RUN mkdir -p /xtts-server/speakers /xtts-server/output /xtts-server/models
