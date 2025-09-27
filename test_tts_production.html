@@ -439,23 +439,29 @@
                 speakerSelect.innerHTML = '<option value="">Select a speaker...</option>';
                 speakersInfo.innerHTML = '';
 
+                // Always add example voices (API returns directory names, not individual files)
+                speakerSelect.innerHTML += '<option value="example/female.wav">Example: Female Voice</option>';
+                speakerSelect.innerHTML += '<option value="example/male.wav">Example: Male Voice</option>';
+                speakerSelect.innerHTML += '<option value="example/calm_female.wav">Example: Calm Female</option>';
+
                 if (speakers.length === 0) {
-                    speakerSelect.innerHTML += '<option value="example/female.wav">Example: Female Voice</option>';
-                    speakerSelect.innerHTML += '<option value="example/male.wav">Example: Male Voice</option>';
-                    speakerSelect.innerHTML += '<option value="example/calm_female.wav">Example: Calm Female</option>';
                     speakersInfo.innerHTML = '<div class="speaker-tag">No custom speakers. Using default examples.</div>';
                 } else {
+                    // Show available speaker directories
                     speakers.forEach(speaker => {
-                        const option = document.createElement('option');
-                        option.value = speaker.speaker_name;
-                        option.textContent = speaker.speaker_name;
-                        speakerSelect.appendChild(option);
-
                         const tag = document.createElement('div');
                         tag.className = 'speaker-tag';
-                        tag.textContent = speaker.speaker_name;
+                        tag.textContent = `📁 ${speaker}`;
                         speakersInfo.appendChild(tag);
                     });
+
+                    // Add info about using directory-based speakers
+                    const infoTag = document.createElement('div');
+                    infoTag.className = 'speaker-tag';
+                    infoTag.style.backgroundColor = '#e3f2fd';
+                    infoTag.style.color = '#1976d2';
+                    infoTag.textContent = 'Use "speaker_folder_name" in custom path below';
+                    speakersInfo.appendChild(infoTag);
                 }
             } catch (error) {
                 console.error('Error loading speakers:', error);
