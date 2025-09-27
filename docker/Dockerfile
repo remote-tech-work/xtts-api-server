@@ -11,20 +11,26 @@ RUN apt-get update && \
     git python3 python3-pip make g++ ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip and install virtualenv
-RUN python3 -m pip install --upgrade pip setuptools wheel ninja virtualenv
+# Upgrade pip and install build tools
+RUN python3 -m pip install --upgrade pip setuptools wheel
 
-# Copy the application source code to /app directory and change the workdir to /app
-# COPY . /app
-# WORKDIR /app
+# Install PyTorch with specific versions for stability
+RUN pip install torch==2.1.1 torchaudio==2.1.1 --index-url https://download.pytorch.org/whl/cu121
 
-# Install Python dependencies
-RUN pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
-RUN pip install deepspeed
-RUN pip install xtts-api-server
+# Install specific TTS version that works
+RUN pip install TTS==0.22.0
+
+# Install deepspeed with specific version
+RUN pip install deepspeed==0.14.0
+
+# Install xtts-api-server
+RUN pip install xtts-api-server==0.9.0
+
+# Create necessary directories
+RUN mkdir -p /xtts-server/speakers /xtts-server/output /xtts-server/models
 
 # Expose the container ports
 EXPOSE 8020
 
 # Run xtts_api_server when the container starts
-CMD ["bash", "-c", "python3 -m xtts_api_server --listen -p 8020 -t 'http://localhost:8020' -sf 'xtts-server/speakers' -o 'xtts-server/output' -mf 'xtts-server/models' --deepspeed"]
+CMD ["python3", "-m", "xtts_api_server", "--listen", "-p", "8020", "-sf", "/xtts-server/speakers", "-o", "/xtts-server/output", "-mf", "/xtts-server/models", "--deepspeed"]
