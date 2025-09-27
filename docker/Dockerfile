@@ -38,8 +38,12 @@ RUN pip install spacy==3.7.2
 # Download spacy model using direct URL to avoid version issues
 RUN pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0-py3-none-any.whl
 
-# Install Japanese language support
-RUN pip install cutlet "fugashi[unidic-lite]" mecab-python3 unidic
+# Install Japanese language support with MeCab
+RUN apt-get update && apt-get install -y mecab libmecab-dev mecab-ipadic-utf8 && rm -rf /var/lib/apt/lists/*
+RUN pip install mecab-python3 unidic-lite
+# Download and configure unidic dictionary for MeCab
+RUN python3 -c "import unidic_lite; unidic_lite.download()"
+RUN pip install cutlet fugashi
 
 # Install other dependencies with specific versions
 RUN pip install \
