@@ -40,10 +40,8 @@ RUN pip install https://github.com/explosion/spacy-models/releases/download/en_c
 
 # Install Japanese language support with MeCab
 RUN apt-get update && apt-get install -y mecab libmecab-dev mecab-ipadic-utf8 && rm -rf /var/lib/apt/lists/*
-RUN pip install mecab-python3 unidic-lite
-# Download and configure unidic dictionary for MeCab
-RUN python3 -c "import unidic_lite; unidic_lite.download()"
-RUN pip install cutlet fugashi
+# Install unidic-lite (includes dictionary) and other Japanese packages
+RUN pip install mecab-python3 unidic-lite fugashi cutlet
 
 # Install other dependencies with specific versions
 RUN pip install \
