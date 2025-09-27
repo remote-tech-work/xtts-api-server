@@ -34,8 +34,9 @@ RUN pip install TTS==0.22.0
 RUN pip install deepspeed==0.14.0
 
 # Install language processing dependencies
-RUN pip install spacy==3.7.2 && \
-    python3 -m spacy download en_core_web_sm
+RUN pip install spacy==3.7.2
+# Download spacy model using direct URL to avoid version issues
+RUN pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.0/en_core_web_sm-3.7.0-py3-none-any.whl
 
 # Install Japanese language support
 RUN pip install cutlet "fugashi[unidic-lite]" mecab-python3 unidic
