@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XTTS API Test Page - Production Server (with Upload)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .production-badge {
+            display: inline-block;
+            background: #dc3545;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gpu-indicator {
+            display: inline-flex;
+            align-items: center;
+            background: #28a745;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .gpu-indicator svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+
+        select, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(42, 82, 152, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .audio-player {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .status.loading {
+            background: #cce5ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+            display: block;
+        }
+
+        .speakers-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .speaker-tag {
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid #2a5298;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .performance-stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2a5298;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #2a5298;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            🎙️ XTTS API Test Page
+            <span class="production-badge">PRODUCTION</span>
+        </h1>
+
+        <div style="text-align: center;">
+            <div class="gpu-indicator">
+                <svg fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13 7H7v6h6V7z"/>
+                    <path fill-rule="evenodd" d="M7 2a1 1 0 00-1 1v1H3a1 1 0 00-1 1v10a1 1 0 001 1h1v1a1 1 0 001 1h1a1 1 0 001-1v-1h6v1a1 1 0 001 1h1a1 1 0 001-1v-1h1a1 1 0 001-1V5a1 1 0 00-1-1h-3V3a1 1 0 00-1-1H7zm10 3v10H3V5h14z" clip-rule="evenodd"/>
+                </svg>
+                GPU Accelerated (AWS G4)
+            </div>
+        </div>
+
+        <div class="info-box">
+            <p><strong>Server:</strong> AWS EC2 G4 Instance (GPU Enabled)</p>
+            <p><strong>Endpoint:</strong> <span id="server-url">http://35.80.239.175:8020</span></p>
+            <p><strong>Status:</strong> <span id="server-status">Checking...</span></p>
+            <p><strong>Response Time:</strong> <span id="response-time">-</span> ms</p>
+        </div>
+
+        <div class="form-group">
+            <label for="text">Text to Speech:</label>
+            <textarea id="text" placeholder="Enter the text you want to convert to speech...">Merhaba! Bu GPU destekli sunucu, yüksek kaliteli Türkçe metin seslendirme hizmeti sunmaktadır. Çeşitli dillerde ve ses klonlama özellikleriyle hızlı sentezleme yapabilirsiniz.</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="language">Language:</label>
+            <select id="language">
+                <option value="tr" selected>Turkish</option>
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="it">Italian</option>
+                <option value="pt">Portuguese</option>
+                <option value="pl">Polish</option>
+                <option value="ru">Russian</option>
+                <option value="nl">Dutch</option>
+                <option value="cs">Czech</option>
+                <option value="ar">Arabic</option>
+                <option value="zh-cn">Chinese</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="hi">Hindi</option>
+                <option value="hu">Hungarian</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="speaker">Speaker (voice sample):</label>
+            <select id="speaker">
+                <option value="">Loading speakers...</option>
+            </select>
+            <div class="speakers-list" id="speakers-info"></div>
+        </div>
+
+        <div class="form-group" style="background: #f0f8ff; padding: 20px; border-radius: 8px; border: 2px dashed #2a5298;">
+            <label for="upload-speaker" style="color: #2a5298; font-weight: 600;">🎤 Upload Your Own Voice (WAV file):</label>
+            <input type="file" id="upload-speaker" accept=".wav,audio/wav" style="margin-top: 10px;">
+            <div id="upload-info" style="margin-top: 10px; font-size: 14px; color: #666;">
+                <p>Requirements: WAV format, mono, 22050Hz, 7-9 seconds duration</p>
+                <p id="file-status" style="margin-top: 5px; font-weight: 600;"></p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="custom-speaker">Or enter custom speaker path:</label>
+            <input type="text" id="custom-speaker" placeholder="e.g., speakers/my_voice.wav">
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" onclick="generateSpeech()">
+                <span id="generate-btn-text">🔊 Generate Speech</span>
+                <span id="generate-spinner" style="display: none;">
+                    <span class="loading-spinner"></span> Generating...
+                </span>
+            </button>
+            <button class="btn-secondary" onclick="loadSpeakers()">🔄 Refresh Speakers</button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div class="performance-stats" id="performance-stats" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-value" id="generation-time">-</div>
+                <div class="stat-label">Generation Time</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="audio-duration">-</div>
+                <div class="stat-label">Audio Duration</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="speed-factor">-</div>
+                <div class="stat-label">Speed Factor</div>
+            </div>
+        </div>
+
+        <div class="audio-player" id="audio-container" style="display: none;">
+            <h3>Generated Audio:</h3>
+            <audio id="audio-player" controls></audio>
+            <div style="margin-top: 10px;">
+                <a id="download-link" download="generated_speech.wav" style="color: #2a5298; text-decoration: none; font-weight: 500;">
+                    📥 Download Audio
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Production server configuration
+        const API_BASE = 'http://35.80.239.175:8020';
+        let generationStartTime;
+        let uploadedFile = null;
+
+        // Check server status on load
+        window.onload = function() {
+            checkServerStatus();
+            loadSpeakers();
+
+            // Periodic health check
+            setInterval(checkServerStatus, 30000);
+
+            // File upload handler
+            document.getElementById('upload-speaker').addEventListener('change', handleFileUpload);
+        };
+
+        async function checkServerStatus() {
+            const statusElement = document.getElementById('server-status');
+            const responseTimeElement = document.getElementById('response-time');
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch(`${API_BASE}/languages`, {
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                const responseTime = Math.round(performance.now() - startTime);
+                responseTimeElement.textContent = responseTime;
+
+                if (response.ok) {
+                    statusElement.textContent = '✅ Connected (GPU Active)';
+                    statusElement.style.color = '#28a745';
+                } else {
+                    statusElement.textContent = '⚠️ Server Error';
+                    statusElement.style.color = '#ffc107';
+                }
+            } catch (error) {
+                console.error('Server check failed:', error);
+                statusElement.textContent = '❌ Not reachable';
+                statusElement.style.color = '#dc3545';
+                responseTimeElement.textContent = '-';
+            }
+        }
+
+        async function loadSpeakers() {
+            const speakerSelect = document.getElementById('speaker');
+            const speakersInfo = document.getElementById('speakers-info');
+
+            try {
+                const response = await fetch(`${API_BASE}/speakers_list`, {
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to load speakers');
+
+                const speakers = await response.json();
+
+                speakerSelect.innerHTML = '<option value="">Select a speaker...</option>';
+                speakersInfo.innerHTML = '';
+
+                if (speakers.length === 0) {
+                    speakerSelect.innerHTML += '<option value="example/female.wav">Example: Female Voice</option>';
+                    speakerSelect.innerHTML += '<option value="example/male.wav">Example: Male Voice</option>';
+                    speakerSelect.innerHTML += '<option value="example/calm_female.wav">Example: Calm Female</option>';
+                    speakersInfo.innerHTML = '<div class="speaker-tag">No custom speakers. Using default examples.</div>';
+                } else {
+                    speakers.forEach(speaker => {
+                        const option = document.createElement('option');
+                        option.value = speaker.speaker_name;
+                        option.textContent = speaker.speaker_name;
+                        speakerSelect.appendChild(option);
+
+                        const tag = document.createElement('div');
+                        tag.className = 'speaker-tag';
+                        tag.textContent = speaker.speaker_name;
+                        speakersInfo.appendChild(tag);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading speakers:', error);
+                speakerSelect.innerHTML = '<option value="">Error loading speakers</option>';
+                speakerSelect.innerHTML += '<option value="example/female.wav">Example: Female Voice</option>';
+                speakerSelect.innerHTML += '<option value="example/male.wav">Example: Male Voice</option>';
+                speakerSelect.innerHTML += '<option value="example/calm_female.wav">Example: Calm Female</option>';
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            const fileStatus = document.getElementById('file-status');
+
+            if (file) {
+                if (!file.name.toLowerCase().endsWith('.wav')) {
+                    fileStatus.textContent = '❌ Please select a WAV file';
+                    fileStatus.style.color = '#dc3545';
+                    uploadedFile = null;
+                    return;
+                }
+
+                uploadedFile = file;
+                fileStatus.textContent = `✅ File selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                fileStatus.style.color = '#28a745';
+
+                // Clear other speaker selections when file is uploaded
+                document.getElementById('speaker').value = '';
+                document.getElementById('custom-speaker').value = '';
+            }
+        }
+
+        async function generateSpeech() {
+            const text = document.getElementById('text').value;
+            const language = document.getElementById('language').value;
+            const customSpeaker = document.getElementById('custom-speaker').value;
+            const selectedSpeaker = document.getElementById('speaker').value;
+            const statusDiv = document.getElementById('status');
+            const audioContainer = document.getElementById('audio-container');
+            const audioPlayer = document.getElementById('audio-player');
+            const downloadLink = document.getElementById('download-link');
+            const generateBtn = document.querySelector('.btn-primary');
+            const generateBtnText = document.getElementById('generate-btn-text');
+            const generateSpinner = document.getElementById('generate-spinner');
+            const performanceStats = document.getElementById('performance-stats');
+
+            if (!text) {
+                showStatus('Please enter some text to convert to speech.', 'error');
+                return;
+            }
+
+            // Check if we have a speaker source
+            if (!uploadedFile && !customSpeaker && !selectedSpeaker) {
+                showStatus('Please select a speaker, upload a voice file, or enter a speaker path.', 'error');
+                return;
+            }
+
+            // UI state for loading
+            generateBtn.disabled = true;
+            generateBtnText.style.display = 'none';
+            generateSpinner.style.display = 'inline-block';
+            showStatus('🚀 Generating speech with GPU acceleration...', 'loading');
+
+            generationStartTime = performance.now();
+
+            try {
+                let response;
+
+                if (uploadedFile) {
+                    // Use multipart form data for file upload
+                    const formData = new FormData();
+                    formData.append('text', text);
+                    formData.append('language', language);
+                    formData.append('speaker_wav_file', uploadedFile, uploadedFile.name);
+
+                    response = await fetch(`${API_BASE}/tts_to_audio/`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        body: formData
+                    });
+                } else {
+                    // Use regular JSON for path-based speaker
+                    const speaker = customSpeaker || selectedSpeaker;
+                    response = await fetch(`${API_BASE}/tts_to_audio/`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            speaker_wav: speaker,
+                            language: language
+                        })
+                    });
+                }
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to generate speech');
+                }
+
+                const blob = await response.blob();
+                const audioUrl = URL.createObjectURL(blob);
+
+                // Calculate generation time
+                const generationTime = ((performance.now() - generationStartTime) / 1000).toFixed(2);
+
+                audioPlayer.src = audioUrl;
+                downloadLink.href = audioUrl;
+                audioContainer.style.display = 'block';
+
+                // Load audio to get duration
+                audioPlayer.addEventListener('loadedmetadata', function() {
+                    const audioDuration = audioPlayer.duration.toFixed(2);
+                    const speedFactor = (audioDuration / generationTime).toFixed(1);
+
+                    document.getElementById('generation-time').textContent = `${generationTime}s`;
+                    document.getElementById('audio-duration').textContent = `${audioDuration}s`;
+                    document.getElementById('speed-factor').textContent = `${speedFactor}x`;
+                    performanceStats.style.display = 'flex';
+                }, { once: true });
+
+                showStatus('✨ Speech generated successfully with GPU acceleration!', 'success');
+
+                // Auto-play the generated audio
+                audioPlayer.play().catch(e => console.log('Auto-play prevented:', e));
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                console.error('Error generating speech:', error);
+            } finally {
+                // Reset button state
+                generateBtn.disabled = false;
+                generateBtnText.style.display = 'inline';
+                generateSpinner.style.display = 'none';
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    statusDiv.className = 'status';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
