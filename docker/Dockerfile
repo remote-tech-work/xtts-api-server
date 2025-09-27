@@ -26,17 +26,26 @@ RUN pip install numpy==1.24.3 scipy==1.11.4
 # Install coqpit with specific working version
 RUN pip install "coqpit>=0.0.16,<0.0.18"
 
-# Install TTS without dependencies first
-RUN pip install --no-deps TTS==0.22.0
+# Install trainer (required by TTS)
+RUN pip install trainer==0.0.36
+
+# Install TTS with all dependencies
+RUN pip install TTS==0.22.0
 
 # Install deepspeed
 RUN pip install deepspeed==0.14.0
 
-# Install remaining dependencies
-RUN pip install gruut pysbd inflect librosa "transformers>=4.33.0" encodec num2words
+# Install xtts-api-server specific dependencies
+RUN pip install coqui-tts[languages]==0.24.1 || pip install coqui-tts==0.24.1
+RUN pip install cutlet pydub uuid spacy==3.7.2 stream2sentence==0.2.2
+RUN pip install pyaudio==0.2.14 pyttsx3==2.90
+RUN pip install "fugashi[unidic-lite]"
+RUN pip install requests==2.31.0 transformers==4.36.2
 
-# Install xtts-api-server and its dependencies
-RUN pip install --no-deps xtts-api-server==0.9.0
+# Install xtts-api-server
+RUN pip install xtts-api-server==0.9.0
+
+# Install API dependencies
 RUN pip install pydantic loguru fastapi "uvicorn[standard]" python-multipart
 
 # Create necessary directories
