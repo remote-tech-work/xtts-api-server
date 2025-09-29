@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+TEST Command
+cd .. && git pull origin main && cd docker && docker-compose down && docker system prune -f && docker-compose build && docker-compose up -d
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

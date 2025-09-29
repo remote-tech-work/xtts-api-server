@@ -1,5 +1,3 @@
-version: '3.4'
-
 services:
   xttsapiserver:
     image: xttsapiserver
@@ -11,6 +9,7 @@ services:
       - "${HOST_PORT:-8020}:${CONTAINER_PORT:-8020}"
     volumes:
       - ./xtts-server:/xtts-server
+      - ../example:/xtts-server/speakers/example:ro
     deploy:
       resources:
         reservations:

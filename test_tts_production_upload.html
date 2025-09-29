@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XTTS API Test Page - Production Server</title>
+    <title>XTTS API Test Page - Production Server (with Upload)</title>
     <style>
         * {
             margin: 0;
@@ -332,6 +332,15 @@
             <div class="speakers-list" id="speakers-info"></div>
         </div>
 
+        <div class="form-group" style="background: #fff3cd; padding: 20px; border-radius: 8px; border: 2px solid #ffc107;">
+            <label style="color: #856404; font-weight: 600;">⚠️ File Upload Feature:</label>
+            <div style="margin-top: 10px; font-size: 14px; color: #856404;">
+                <p><strong>Note:</strong> Direct file upload is not yet supported by the current server version.</p>
+                <p><strong>Workaround:</strong> Manually copy your WAV file to the server's speakers folder and use the path below.</p>
+                <p><strong>Future:</strong> File upload will be added in a future server update.</p>
+            </div>
+        </div>
+
         <div class="form-group">
             <label for="custom-speaker">Or enter custom speaker path:</label>
             <input type="text" id="custom-speaker" placeholder="e.g., speakers/my_voice.wav">
@@ -379,6 +388,7 @@
         // Production server configuration
         const API_BASE = 'http://35.80.239.175:8020';
         let generationStartTime;
+        let uploadedFile = null;
 
         // Check server status on load
         window.onload = function() {
@@ -387,6 +397,9 @@
 
             // Periodic health check
             setInterval(checkServerStatus, 30000);
+
+            // File upload handler
+            document.getElementById('upload-speaker').addEventListener('change', handleFileUpload);
         };
 
         async function checkServerStatus() {
@@ -472,11 +485,33 @@
             }
         }
 
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            const fileStatus = document.getElementById('file-status');
+
+            if (file) {
+                if (!file.name.toLowerCase().endsWith('.wav')) {
+                    fileStatus.textContent = '❌ Please select a WAV file';
+                    fileStatus.style.color = '#dc3545';
+                    uploadedFile = null;
+                    return;
+                }
+
+                uploadedFile = file;
+                fileStatus.textContent = `✅ File selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                fileStatus.style.color = '#28a745';
+
+                // Clear other speaker selections when file is uploaded
+                document.getElementById('speaker').value = '';
+                document.getElementById('custom-speaker').value = '';
+            }
+        }
+
         async function generateSpeech() {
             const text = document.getElementById('text').value;
             const language = document.getElementById('language').value;
-            const speaker = document.getElementById('custom-speaker').value ||
-                           document.getElementById('speaker').value;
+            const customSpeaker = document.getElementById('custom-speaker').value;
+            const selectedSpeaker = document.getElementById('speaker').value;
             const statusDiv = document.getElementById('status');
             const audioContainer = document.getElementById('audio-container');
             const audioPlayer = document.getElementById('audio-player');
@@ -491,8 +526,9 @@
                 return;
             }
 
-            if (!speaker) {
-                showStatus('Please select a speaker or enter a speaker path.', 'error');
+            // Check if we have a speaker source
+            if (!uploadedFile && !customSpeaker && !selectedSpeaker) {
+                showStatus('Please select a speaker, upload a voice file, or enter a speaker path.', 'error');
                 return;
             }
 
@@ -505,18 +541,36 @@
             generationStartTime = performance.now();
 
             try {
-                const response = await fetch(`${API_BASE}/tts_to_audio/`, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        text: text,
-                        speaker_wav: speaker,
-                        language: language
-                    })
-                });
+                let response;
+
+                if (uploadedFile) {
+                    // Use multipart form data for file upload
+                    const formData = new FormData();
+                    formData.append('text', text);
+                    formData.append('language', language);
+                    formData.append('speaker_wav_file', uploadedFile, uploadedFile.name);
+
+                    response = await fetch(`${API_BASE}/tts_to_audio/`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        body: formData
+                    });
+                } else {
+                    // Use regular JSON for path-based speaker
+                    const speaker = customSpeaker || selectedSpeaker;
+                    response = await fetch(`${API_BASE}/tts_to_audio/`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            speaker_wav: speaker,
+                            language: language
+                        })
+                    });
+                }
 
                 if (!response.ok) {
                     const error = await response.json();
