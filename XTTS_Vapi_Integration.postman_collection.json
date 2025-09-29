@@ -1,0 +1,439 @@
+{
+	"info": {
+		"_postman_id": "xtts-vapi-integration",
+		"name": "XTTS Vapi.ai Integration",
+		"description": "Test collection for XTTS API Server Vapi.ai integration endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health & Status",
+			"item": [
+				{
+					"name": "Vapi Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://35.80.239.175:8020/vapi/health",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"vapi",
+								"health"
+							]
+						},
+						"description": "Check Vapi.ai integration health status and configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Server Languages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://35.80.239.175:8020/languages",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"languages"
+							]
+						},
+						"description": "Get list of supported languages"
+					},
+					"response": []
+				},
+				{
+					"name": "Speakers List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://35.80.239.175:8020/speakers_list",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"speakers_list"
+							]
+						},
+						"description": "Get list of available speaker folders"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Vapi.ai TTS",
+			"item": [
+				{
+					"name": "Generate TTS (Turkish - 22050Hz)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"voice-request\",\n    \"text\": \"Merhaba, bu Vapi.ai entegrasyonu test mesajıdır. Türkçe seslendirme başarıyla çalışıyor.\",\n    \"sampleRate\": 22050,\n    \"timestamp\": {{$timestamp}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://35.80.239.175:8020/vapi/tts",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"vapi",
+								"tts"
+							]
+						},
+						"description": "Generate Turkish TTS with 22050Hz sample rate"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate TTS (Turkish - 16000Hz)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"voice-request\",\n    \"text\": \"Ses kalitesi test ediliyor. 16 kilohertz örnekleme hızında Türkçe konuşma sentezleniyor.\",\n    \"sampleRate\": 16000,\n    \"timestamp\": {{$timestamp}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://35.80.239.175:8020/vapi/tts",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"vapi",
+								"tts"
+							]
+						},
+						"description": "Generate Turkish TTS with 16000Hz sample rate"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate TTS (English - 22050Hz)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"voice-request\",\n    \"text\": \"Hello from Vapi.ai integration! This is a test of the text-to-speech system with GPU acceleration.\",\n    \"sampleRate\": 22050,\n    \"timestamp\": {{$timestamp}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://35.80.239.175:8020/vapi/tts",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"vapi",
+								"tts"
+							]
+						},
+						"description": "Generate English TTS for comparison"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate TTS (Long Turkish Text)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"voice-request\",\n    \"text\": \"Bu daha uzun bir Türkçe metin örneğidir. Vapi.ai platformu ile entegrasyon sayesinde, gerçek zamanlı sesli asistan uygulamaları geliştirebilirsiniz. GPU hızlandırmalı sunucumuz, yüksek kaliteli ve düşük gecikmeli ses sentezi sağlar. Türkçe dilinde doğal ses üretimi için optimize edilmiş modelimiz, çeşitli ses tonları ve hızlarında konuşma üretebilir.\",\n    \"sampleRate\": 22050,\n    \"timestamp\": {{$timestamp}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://35.80.239.175:8020/vapi/tts",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"vapi",
+								"tts"
+							]
+						},
+						"description": "Test with longer Turkish text for performance"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Error Testing",
+			"item": [
+				{
+					"name": "Invalid Request Type",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"invalid-type\",\n    \"text\": \"Test\",\n    \"sampleRate\": 22050,\n    \"timestamp\": {{$timestamp}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://35.80.239.175:8020/vapi/tts",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"vapi",
+								"tts"
+							]
+						},
+						"description": "Should return 400 error for invalid type"
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid Sample Rate",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"voice-request\",\n    \"text\": \"Test\",\n    \"sampleRate\": 44100,\n    \"timestamp\": {{$timestamp}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://35.80.239.175:8020/vapi/tts",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"vapi",
+								"tts"
+							]
+						},
+						"description": "Should return 400 error for unsupported sample rate"
+					},
+					"response": []
+				},
+				{
+					"name": "Empty Text",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"voice-request\",\n    \"text\": \"\",\n    \"sampleRate\": 22050,\n    \"timestamp\": {{$timestamp}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://35.80.239.175:8020/vapi/tts",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"vapi",
+								"tts"
+							]
+						},
+						"description": "Should return 400 error for empty text"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Standard TTS (for comparison)",
+			"item": [
+				{
+					"name": "Standard TTS to Audio",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Standart TTS API testi. Bu endpoint WAV dosyası döndürür.\",\n    \"speaker_wav\": \"example/female.wav\",\n    \"language\": \"tr\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://35.80.239.175:8020/tts_to_audio/",
+							"protocol": "http",
+							"host": [
+								"35",
+								"80",
+								"239",
+								"175"
+							],
+							"port": "8020",
+							"path": [
+								"tts_to_audio",
+								""
+							]
+						},
+						"description": "Standard TTS endpoint for comparison with Vapi endpoint"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://35.80.239.175:8020",
+			"type": "string"
+		}
+	]
+}
