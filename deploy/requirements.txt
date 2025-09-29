@@ -1,0 +1,5 @@
+# AWS SDK for deployment and cleanup scripts
+boto3>=1.40.0
+
+# Additional utilities for deployment
+requests>=2.31.0

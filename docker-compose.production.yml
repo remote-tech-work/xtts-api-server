@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  xtts-api:
+    image: ${DOCKER_IMAGE:-xtts-api-server:latest}
+    container_name: xtts-api-server
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE:-Dockerfile.production}
+    ports:
+      - "8020:8020"
+    volumes:
+      - ./speakers:/app/speakers
+      - ./output:/app/output
+      - ./models:/app/xtts_models
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DEVICE=cuda
+      - USE_CACHE=true
+      - DEEPSPEED=${DEEPSPEED:-false}
+      - MODEL_SOURCE=local
+      - MODEL_VERSION=v2.0.2
+      - CUDA_VISIBLE_DEVICES=0
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8020/languages"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: Nginx reverse proxy for SSL/TLS
+  nginx:
+    image: nginx:alpine
+    container_name: xtts-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - xtts-api
+    restart: unless-stopped
+    profiles:
+      - with-ssl

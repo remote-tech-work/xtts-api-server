@@ -1,0 +1,218 @@
+name: Deploy to AWS Spot Instance
+
+on:
+  push:
+    branches:
+      - main
+      - development
+  workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - development
+
+env:
+  AWS_REGION: us-east-1
+  ELASTIC_IP: 35.80.239.175
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Check if instance exists
+      id: check-instance
+      run: |
+        INSTANCE_ID=$(aws ec2 describe-instances \
+          --filters "Name=tag:Name,Values=XTTS-API-Server" \
+                    "Name=instance-state-name,Values=running,stopped" \
+          --query "Reservations[0].Instances[0].InstanceId" \
+          --output text)
+
+        if [ "$INSTANCE_ID" != "None" ] && [ ! -z "$INSTANCE_ID" ]; then
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+          echo "instance_exists=true" >> $GITHUB_OUTPUT
+
+          # Check if elastic IP is associated
+          ASSOCIATED=$(aws ec2 describe-addresses \
+            --allocation-ids eipalloc-053fa187bd3ca7c89 \
+            --query "Addresses[0].InstanceId" \
+            --output text)
+
+          if [ "$ASSOCIATED" != "$INSTANCE_ID" ]; then
+            echo "Associating Elastic IP..."
+            aws ec2 associate-address \
+              --instance-id $INSTANCE_ID \
+              --allocation-id eipalloc-053fa187bd3ca7c89
+          fi
+        else
+          echo "instance_exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Launch spot instance if needed
+      if: steps.check-instance.outputs.instance_exists == 'false'
+      run: |
+        # Create launch script inline to ensure proper configuration
+        cat > /tmp/launch-instance.sh <<'SCRIPT'
+        #!/bin/bash
+        set -e
+
+        INSTANCE_TYPE="g4dn.xlarge"
+        AMI_ID="${{ secrets.AMI_ID || 'ami-0143ff78595ef49f5' }}"
+        KEY_NAME="${{ secrets.KEY_NAME || 'finetuning' }}"
+        SECURITY_GROUP="xtts-api-${{ github.ref_name }}"
+        MAX_PRICE="0.30"
+        ELASTIC_IP_ALLOCATION_ID="eipalloc-053fa187bd3ca7c89"
+        REGION="${{ env.AWS_REGION }}"
+
+        # Create security group if doesn't exist
+        SECURITY_GROUP_ID=$(aws ec2 describe-security-groups \
+          --filters "Name=group-name,Values=$SECURITY_GROUP" \
+          --query 'SecurityGroups[0].GroupId' \
+          --output text --region $REGION 2>/dev/null || echo "")
+
+        if [ "$SECURITY_GROUP_ID" == "" ] || [ "$SECURITY_GROUP_ID" == "None" ]; then
+          SECURITY_GROUP_ID=$(aws ec2 create-security-group \
+            --group-name $SECURITY_GROUP \
+            --description "XTTS API Server - ${{ github.ref_name }}" \
+            --region $REGION --output text)
+
+          aws ec2 authorize-security-group-ingress \
+            --group-id $SECURITY_GROUP_ID --protocol tcp --port 22 --cidr 0.0.0.0/0 --region $REGION
+          aws ec2 authorize-security-group-ingress \
+            --group-id $SECURITY_GROUP_ID --protocol tcp --port 8020 --cidr 0.0.0.0/0 --region $REGION
+        fi
+
+        # Launch spot instance
+        REQUEST_ID=$(aws ec2 request-spot-instances \
+          --spot-price "$MAX_PRICE" \
+          --instance-count 1 \
+          --type "one-time" \
+          --launch-specification "{
+            \"ImageId\": \"$AMI_ID\",
+            \"InstanceType\": \"$INSTANCE_TYPE\",
+            \"KeyName\": \"$KEY_NAME\",
+            \"SecurityGroupIds\": [\"$SECURITY_GROUP_ID\"],
+            \"UserData\": \"$(base64 -w 0 < deploy/aws/user-data.sh)\",
+            \"BlockDeviceMappings\": [{
+              \"DeviceName\": \"/dev/sda1\",
+              \"Ebs\": {
+                \"VolumeSize\": 200,
+                \"VolumeType\": \"gp3\",
+                \"DeleteOnTermination\": true,
+                \"Iops\": 3000,
+                \"Throughput\": 125
+              }
+            }]
+          }" \
+          --region $REGION --output text \
+          --query 'SpotInstanceRequests[0].SpotInstanceRequestId')
+
+        # Wait for instance
+        aws ec2 wait spot-instance-request-fulfilled --spot-instance-request-ids $REQUEST_ID --region $REGION
+
+        INSTANCE_ID=$(aws ec2 describe-spot-instance-requests \
+          --spot-instance-request-ids $REQUEST_ID \
+          --region $REGION \
+          --query 'SpotInstanceRequests[0].InstanceId' \
+          --output text)
+
+        # Tag instance
+        aws ec2 create-tags \
+          --resources $INSTANCE_ID \
+          --tags Key=Name,Value=XTTS-API-Server Key=Environment,Value=${{ github.ref_name }} Key=Project,Value=xtts-api \
+          --region $REGION
+
+        # Associate elastic IP
+        aws ec2 associate-address \
+          --instance-id $INSTANCE_ID \
+          --allocation-id $ELASTIC_IP_ALLOCATION_ID \
+          --region $REGION
+
+        echo "Instance launched: $INSTANCE_ID"
+        SCRIPT
+
+        chmod +x /tmp/launch-instance.sh
+        /tmp/launch-instance.sh
+
+    - name: Wait for instance to be ready
+      run: |
+        if [ "${{ steps.check-instance.outputs.instance_exists }}" == "true" ]; then
+          INSTANCE_ID="${{ steps.check-instance.outputs.instance_id }}"
+        else
+          # Get the newly created instance ID
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=XTTS-API-Server" \
+                      "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" \
+            --output text)
+        fi
+
+        echo "Waiting for instance $INSTANCE_ID to be ready..."
+        aws ec2 wait instance-status-ok --instance-ids $INSTANCE_ID
+
+    - name: Deploy to instance
+      run: |
+        # Get instance ID
+        INSTANCE_ID=$(aws ec2 describe-instances \
+          --filters "Name=tag:Name,Values=XTTS-API-Server" \
+                    "Name=instance-state-name,Values=running" \
+          --query "Reservations[0].Instances[0].InstanceId" \
+          --output text)
+
+        # Use AWS Systems Manager to run deployment commands
+        aws ssm send-command \
+          --instance-ids "$INSTANCE_ID" \
+          --document-name "AWS-RunShellScript" \
+          --parameters 'commands=[
+            "cd /home/ubuntu/xtts-api-server",
+            "git pull origin ${{ github.ref_name }}",
+            "echo \"Building Docker image on AWS instance with 200GB storage...\"",
+            "if docker build -f Dockerfile.production -t xtts-api-server:latest . ; then echo \"Production build successful\"; elif docker build -f Dockerfile.simple -t xtts-api-server:latest . ; then echo \"Simple build successful\"; else echo \"Both builds failed\" && exit 1; fi",
+            "docker-compose -f docker-compose.production.yml down",
+            "docker-compose -f docker-compose.production.yml up -d",
+            "docker system prune -f"
+          ]' \
+          --output text
+
+    - name: Health check
+      run: |
+        echo "Waiting for service to be healthy..."
+        sleep 30
+
+        for i in {1..10}; do
+          if curl -f http://${{ env.ELASTIC_IP }}:8020/languages; then
+            echo "Service is healthy!"
+            break
+          fi
+          echo "Attempt $i failed, retrying..."
+          sleep 10
+        done
+
+    - name: Notify deployment status
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        text: |
+          Deployment to AWS Spot Instance: ${{ job.status }}
+          Branch: ${{ github.ref }}
+          Commit: ${{ github.sha }}
+          API URL: http://${{ env.ELASTIC_IP }}:8020
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      continue-on-error: true
