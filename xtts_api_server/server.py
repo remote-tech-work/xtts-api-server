@@ -14,6 +14,11 @@ from loguru import logger
 from argparse import ArgumentParser
 from pathlib import Path
 from uuid import uuid4
+import io
+import wave
+import numpy as np
+import torch
+import torchaudio
 
 from xtts_api_server.tts_funcs import TTSWrapper,supported_languages,InvalidSettingsError
 from xtts_api_server.RealtimeTTS import TextToAudioStream, CoquiEngine
@@ -36,6 +41,11 @@ USE_CACHE = os.getenv("USE_CACHE") == 'true'
 STREAM_MODE = os.getenv("STREAM_MODE") == 'true'
 STREAM_MODE_IMPROVE = os.getenv("STREAM_MODE_IMPROVE") == 'true'
 STREAM_PLAY_SYNC = os.getenv("STREAM_PLAY_SYNC") == 'true'
+
+# VAPI.AI INTEGRATION VARS
+VAPI_DEFAULT_SPEAKER = os.getenv("VAPI_DEFAULT_SPEAKER", "example/female.wav")
+VAPI_DEFAULT_LANGUAGE = os.getenv("VAPI_DEFAULT_LANGUAGE", "en")
+VAPI_API_KEY = os.getenv("VAPI_API_KEY", "")
 
 if(DEEPSPEED):
   install_deepspeed_based_on_python_version()
@@ -137,9 +147,15 @@ class SynthesisRequest(BaseModel):
 
 class SynthesisFileRequest(BaseModel):
     text: str
-    speaker_wav: str 
+    speaker_wav: str
     language: str
-    file_name_or_path: str  
+    file_name_or_path: str
+
+class VapiTTSRequest(BaseModel):
+    type: str = "voice-request"
+    text: str
+    sampleRate: int
+    timestamp: int
 
 @app.get("/speakers_list")
 def get_speakers():
@@ -340,6 +356,112 @@ async def tts_to_file(request: SynthesisFileRequest):
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+def convert_wav_to_pcm(wav_file_path: str, target_sample_rate: int) -> bytes:
+    """
+    Convert WAV file to raw PCM data for Vapi.ai
+    Returns: Raw PCM data as bytes (mono, 16-bit signed, little-endian)
+    """
+    try:
+        # Load audio file with torchaudio
+        waveform, sample_rate = torchaudio.load(wav_file_path)
+
+        # Convert to mono if stereo
+        if waveform.shape[0] > 1:
+            waveform = torch.mean(waveform, dim=0, keepdim=True)
+
+        # Resample if needed
+        if sample_rate != target_sample_rate:
+            resampler = torchaudio.transforms.Resample(sample_rate, target_sample_rate)
+            waveform = resampler(waveform)
+
+        # Convert to numpy and scale to int16 range
+        audio_np = waveform.numpy()[0]  # Remove channel dimension
+        audio_int16 = (audio_np * 32767).astype(np.int16)
+
+        # Convert to bytes (little-endian)
+        pcm_bytes = audio_int16.tobytes()
+
+        logger.info(f"Converted WAV to PCM: {len(pcm_bytes)} bytes at {target_sample_rate}Hz")
+        return pcm_bytes
+
+    except Exception as e:
+        logger.error(f"Error converting WAV to PCM: {str(e)}")
+        raise
+
+@app.post("/vapi/tts")
+async def vapi_tts(request: VapiTTSRequest, background_tasks: BackgroundTasks):
+    """
+    Vapi.ai compatible TTS endpoint
+    Returns raw PCM audio data as required by Vapi.ai
+    """
+    try:
+        logger.info(f"Processing Vapi.ai TTS request: text_length={len(request.text)}, sample_rate={request.sampleRate}")
+
+        # Validate request type
+        if request.type != "voice-request":
+            raise HTTPException(status_code=400, detail="Invalid request type. Expected 'voice-request'")
+
+        # Validate sample rate
+        supported_rates = [8000, 16000, 22050, 24000]
+        if request.sampleRate not in supported_rates:
+            raise HTTPException(status_code=400, detail=f"Unsupported sample rate. Supported: {supported_rates}")
+
+        # Validate text length
+        if not request.text or len(request.text.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Text cannot be empty")
+
+        if len(request.text) > 5000:  # Reasonable limit
+            raise HTTPException(status_code=400, detail="Text too long. Maximum 5000 characters")
+
+        # Use default speaker and language for Vapi.ai
+        speaker_wav = VAPI_DEFAULT_SPEAKER
+        language = VAPI_DEFAULT_LANGUAGE
+
+        # Generate audio file using existing TTS logic
+        output_file_path = XTTS.process_tts_to_file(
+            text=request.text,
+            speaker_name_or_path=speaker_wav,
+            language=language,
+            file_name_or_path=f'vapi_{str(uuid4())}.wav'
+        )
+
+        # Convert WAV to PCM for Vapi.ai
+        pcm_data = convert_wav_to_pcm(output_file_path, request.sampleRate)
+
+        # Clean up WAV file
+        background_tasks.add_task(os.unlink, output_file_path)
+
+        # Return raw PCM data with correct headers
+        from fastapi.responses import Response
+        return Response(
+            content=pcm_data,
+            media_type="application/octet-stream",
+            headers={
+                "Content-Length": str(len(pcm_data)),
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+                "Access-Control-Allow-Headers": "*"
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Vapi.ai TTS error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"TTS generation failed: {str(e)}")
+
+@app.get("/vapi/health")
+async def vapi_health():
+    """Health check endpoint for Vapi.ai integration"""
+    return {
+        "status": "healthy",
+        "service": "xtts-api-server",
+        "vapi_integration": "enabled",
+        "default_speaker": VAPI_DEFAULT_SPEAKER,
+        "default_language": VAPI_DEFAULT_LANGUAGE,
+        "supported_sample_rates": [8000, 16000, 22050, 24000],
+        "gpu_available": torch.cuda.is_available(),
+        "device": DEVICE
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app,host="0.0.0.0",port=8002)
