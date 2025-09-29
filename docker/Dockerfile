@@ -62,8 +62,12 @@ RUN pip install \
     loguru \
     pydantic
 
-# Finally install xtts-api-server (let it use already installed deps)
-RUN pip install --no-deps xtts-api-server==0.9.0
+# Copy local source code into container
+COPY . /app
+WORKDIR /app
+
+# Install xtts-api-server from local source
+RUN pip install -e .
 
 # Create necessary directories
 RUN mkdir -p /xtts-server/speakers /xtts-server/output /xtts-server/models
